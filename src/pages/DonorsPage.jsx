@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Users, TrendingUp, Activity } from 'lucide-react';
+import { Plus, Search, Users, TrendingUp, Activity, Trash2 } from 'lucide-react';
 import { useDonors } from '../hooks/useDonors';
 import DonorList from '../components/donor/DonorList';
 import AddDonorModal from '../components/modals/AddDonorModal';
 
-export default function DonorsPage({ onDonorClick }) {
+export default function DonorsPage({ onDonorClick, onTrashClick }) {
   const { donors, loading, error, refetch } = useDonors();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,12 +21,8 @@ export default function DonorsPage({ onDonorClick }) {
       }
       lastScrollY.current = currentScrollY;
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const filteredDonors = Array.isArray(donors)
@@ -35,10 +31,6 @@ export default function DonorsPage({ onDonorClick }) {
         donor.golongan_darah.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : [];
-
-  const handleAddSuccess = () => {
-    refetch();
-  };
 
   const uniqueBloodTypes = Array.isArray(donors)
     ? [...new Set(donors.map(d => d.golongan_darah))].length
@@ -79,14 +71,27 @@ export default function DonorsPage({ onDonorClick }) {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
-            >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="hidden sm:inline">Tambah Pendonor</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
+            <div className="flex items-center gap-2">
+              {/* Trash Button */}
+              <button
+                onClick={onTrashClick}
+                className="flex items-center gap-2 px-4 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all duration-300 shadow-lg"
+                title="Sampah"
+              >
+                <Trash2 className="w-5 h-5" />
+                <span className="hidden sm:inline text-sm font-medium">Sampah</span>
+              </button>
+
+              {/* Add Button */}
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
+              >
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                <span className="hidden sm:inline">Tambah Pendonor</span>
+                <span className="sm:hidden">Tambah</span>
+              </button>
+            </div>
           </div>
 
           {/* Stats Cards */}
@@ -140,15 +145,11 @@ export default function DonorsPage({ onDonorClick }) {
             />
           </div>
         </div>
-
-        {/* Shadow */}
         <div className="h-1 bg-gradient-to-b from-black/10 to-transparent"></div>
       </div>
 
-      {/*  SPACER */}
       <div className="h-8"></div>
 
-      {/* Content */}
       <main className="relative z-0 max-w-7xl mx-auto px-4 py-6">
         <DonorList
           donors={filteredDonors}
@@ -159,11 +160,10 @@ export default function DonorsPage({ onDonorClick }) {
         />
       </main>
 
-      {/* Add Donor Modal */}
       <AddDonorModal
         isOpen={showAddModal}
         onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
+        onSuccess={refetch}
       />
     </div>
   );

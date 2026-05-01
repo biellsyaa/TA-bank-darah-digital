@@ -4,10 +4,20 @@ class DonorService {
 
   async getDonors() {
     try {
-      const response = await supabaseClient.get('/donors?select=*&order=created_at.desc');
+      const response = await supabaseClient.get('/donors?select=*&deleted_at=is.null&order=created_at.desc');
       return response;
     } catch (error) {
       console.error('Error in getDonors:', error);
+      throw error;
+    }
+  }
+
+  async getTrashedDonors() {
+    try {
+      const response = await supabaseClient.get('/donors?select=*&deleted_at=not.is.null&order=deleted_at.desc');
+      return response;
+    } catch (error) {
+      console.error('Error in getTrashedDonors:', error);
       throw error;
     }
   }
@@ -42,12 +52,36 @@ class DonorService {
     }
   }
 
-  async deleteDonor(id) {
+  async softDeleteDonor(id) {
+    try {
+      const response = await supabaseClient.patch(`/donors?id=eq.${id}`, {
+        deleted_at: new Date().toISOString()
+      });
+      return response;
+    } catch (error) {
+      console.error('Error in softDeleteDonor:', error);
+      throw error;
+    }
+  }
+
+  async restoreDonor(id) {
+    try {
+      const response = await supabaseClient.patch(`/donors?id=eq.${id}`, {
+        deleted_at: null
+      });
+      return response;
+    } catch (error) {
+      console.error('Error in restoreDonor:', error);
+      throw error;
+    }
+  }
+
+  async hardDeleteDonor(id) {
     try {
       await supabaseClient.delete(`/donors?id=eq.${id}`);
       return { success: true };
     } catch (error) {
-      console.error('Error in deleteDonor:', error);
+      console.error('Error in hardDeleteDonor:', error);
       throw error;
     }
   }
@@ -55,7 +89,7 @@ class DonorService {
   async searchDonors(query) {
     try {
       const response = await supabaseClient.get(
-        `/donors?nama=ilike.*${query}*&select=*&order=created_at.desc`
+        `/donors?nama=ilike.*${query}*&select=*&deleted_at=is.null&order=created_at.desc`
       );
       return response;
     } catch (error) {
@@ -67,7 +101,7 @@ class DonorService {
   async filterByBloodType(bloodType) {
     try {
       const response = await supabaseClient.get(
-        `/donors?golongan_darah=eq.${bloodType}&select=*&order=created_at.desc`
+        `/donors?golongan_darah=eq.${bloodType}&select=*&deleted_at=is.null&order=created_at.desc`
       );
       return response;
     } catch (error) {

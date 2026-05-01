@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { ArrowLeft, Phone, MapPin, Calendar, User, Droplet, Edit, Trash2 } from 'lucide-react';
-import { useDonor, useDeleteDonor } from '../hooks/useDonors';
+import { useDonor, useSoftDeleteDonor } from '../hooks/useDonors';
 import { formatDate, calculateAge } from '../utils/helpers';
 import LoadingSpinner from '../components/common/LoadingSpinner';
 import ErrorMessage from '../components/common/ErrorMessage';
@@ -8,23 +8,19 @@ import EditDonorModal from '../components/modals/EditDonorModal';
 
 export default function DonorDetailPage({ donorId, onBack }) {
   const { donor, loading, error, refetch } = useDonor(donorId);
-  const { deleteDonor, loading: deleting } = useDeleteDonor();
+  const { softDeleteDonor, loading: deleting } = useSoftDeleteDonor();
   const [showEditModal, setShowEditModal] = useState(false);
 
   const handleDelete = async () => {
-    if (window.confirm('Apakah Anda yakin ingin menghapus pendonor ini?')) {
-      const result = await deleteDonor(donorId);
+    if (window.confirm('Pindahkan pendonor ini ke sampah? Kamu bisa memulihkannya nanti di halaman Sampah.')) {
+      const result = await softDeleteDonor(donorId);
       if (result.success) {
-        alert('✅ Pendonor berhasil dihapus!');
+        alert('🗑️ Pendonor dipindahkan ke sampah!');
         onBack();
       } else {
-        alert('❌ Gagal menghapus pendonor: ' + result.error);
+        alert('❌ Gagal memindahkan ke sampah: ' + result.error);
       }
     }
-  };
-
-  const handleEdit = () => {
-    setShowEditModal(true);
   };
 
   const handleEditSuccess = () => {
@@ -75,7 +71,7 @@ export default function DonorDetailPage({ donorId, onBack }) {
 
           <div className="flex gap-2">
             <button
-              onClick={handleEdit}
+              onClick={() => setShowEditModal(true)}
               className="p-2 text-blue-600 hover:bg-blue-50 rounded-lg transition-colors"
               title="Edit"
             >
@@ -85,7 +81,7 @@ export default function DonorDetailPage({ donorId, onBack }) {
               onClick={handleDelete}
               disabled={deleting}
               className="p-2 text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50"
-              title="Hapus"
+              title="Pindah ke Sampah"
             >
               <Trash2 className="w-5 h-5" />
             </button>
@@ -102,7 +98,6 @@ export default function DonorDetailPage({ donorId, onBack }) {
               <div className="absolute top-4 right-4 w-32 h-32 bg-white rounded-full"></div>
               <div className="absolute bottom-4 left-4 w-40 h-40 bg-white rounded-full"></div>
             </div>
-            
             <div className="relative z-10">
               <div className="w-24 h-24 bg-white rounded-full mx-auto flex items-center justify-center mb-4 shadow-lg">
                 <User className="w-12 h-12 text-red-600" />
@@ -116,7 +111,6 @@ export default function DonorDetailPage({ donorId, onBack }) {
 
           {/* Info Grid */}
           <div className="p-8 space-y-6">
-            {/* Personal Info */}
             <div className="grid md:grid-cols-2 gap-6">
               <div className="flex items-start gap-4">
                 <div className="w-12 h-12 bg-red-100 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -186,7 +180,6 @@ export default function DonorDetailPage({ donorId, onBack }) {
         </div>
       </main>
 
-      {/* Edit Donor Modal */}
       <EditDonorModal
         isOpen={showEditModal}
         onClose={() => setShowEditModal(false)}
