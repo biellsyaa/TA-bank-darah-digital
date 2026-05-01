@@ -1,8 +1,10 @@
 import axios from 'axios';
+import { createClient } from '@supabase/supabase-js';
 
 const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
+// Axios untuk CRUD (tetap dipakai semua service)
 const supabaseClient = axios.create({
   baseURL: `${SUPABASE_URL}/rest/v1`,
   headers: {
@@ -15,25 +17,21 @@ const supabaseClient = axios.create({
 });
 
 supabaseClient.interceptors.request.use(
-  (config) => {
-    return config;
-  },
-  (error) => {
-    return Promise.reject(error);
-  }
+  (config) => config,
+  (error) => Promise.reject(error)
 );
 
 supabaseClient.interceptors.response.use(
-  (response) => {
-    return response.data;
-  },
+  (response) => response.data,
   (error) => {
-    const errorMessage = error.response?.data?.message || 
-                        error.message || 
-                        'Terjadi kesalahan';
+    const errorMessage = error.response?.data?.message ||
+      error.message || 'Terjadi kesalahan';
     return Promise.reject(errorMessage);
   }
 );
 
-export { supabaseClient, SUPABASE_URL };
+// Supabase JS Client — untuk Auth (session otomatis tersimpan)
+const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+export { supabaseClient, supabase, SUPABASE_URL };
 export default supabaseClient;
