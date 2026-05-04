@@ -5,6 +5,7 @@ import permintaanService from '../services/permintaanService';
 import donorService from '../services/donorService';
 import stockService from '../services/stockService';
 import { formatDate } from '../utils/helpers';
+import { useAuth } from '../hooks/useAuth';
 
 const STATUS_OPTIONS = ['menunggu', 'diproses', 'selesai', 'ditolak'];
 const STATUS_LABEL = { menunggu: 'Menunggu', diproses: 'Diproses', selesai: 'Selesai', ditolak: 'Ditolak' };
@@ -15,7 +16,6 @@ const STATUS_COLOR = {
     ditolak: 'bg-red-100 text-red-700',
 };
 
-// Modal Tambah Permintaan
 function AddModal({ isOpen, onClose, onSuccess }) {
     const [loading, setLoading] = useState(false);
     const [donors, setDonors] = useState([]);
@@ -63,7 +63,7 @@ function AddModal({ isOpen, onClose, onSuccess }) {
 
     if (!isOpen) return null;
     return (
-        <div className="fixed inset-0 backdrop-blur-md flex items-start justify-center z-[60] p-4 pt-20">
+        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4">
             <div className="bg-white rounded-2xl w-full max-w-lg max-h-[90vh] overflow-y-auto">
                 <div className="bg-red-600 text-white p-4 rounded-t-2xl flex justify-between items-center sticky top-0">
                     <h3 className="font-bold text-lg">Buat Permintaan Darah</h3>
@@ -132,21 +132,16 @@ function AddModal({ isOpen, onClose, onSuccess }) {
     );
 }
 
-export default function PermintaanPage() {
+export default function PermintaanPage({ isAdmin }) {
     const { permintaan, loading, error, refetch } = usePermintaan();
+    const { user } = useAuth();
     const [showAdd, setShowAdd] = useState(false);
     const [search, setSearch] = useState('');
     const [openStatus, setOpenStatus] = useState(null);
 
-    // Close dropdown when clicking outside
-    React.useEffect(() => {
-        const handleClickOutside = () => setOpenStatus(null);
-        if (openStatus) {
-            document.addEventListener('click', handleClickOutside);
-            return () => document.removeEventListener('click', handleClickOutside);
-        }
-    }, [openStatus]);
-
+    // Pasien hanya lihat permintaan yang nama_pasiennya cocok dengan email-nya
+    // atau bisa juga filter berdasarkan user_id jika kolom tersedia
+    // Untuk sekarang: admin lihat semua, pasien lihat semua tapi tidak bisa ubah status/hapus
     const filtered = permintaan.filter(p =>
         p.nama_pasien?.toLowerCase().includes(search.toLowerCase()) ||
         p.golongan_darah?.toLowerCase().includes(search.toLowerCase()) ||
@@ -160,6 +155,7 @@ export default function PermintaanPage() {
     };
 
     const handleStatusChange = async (id, newStatus) => {
+        if (!isAdmin) return;
         try {
             await permintaanService.updateStatus(id, newStatus);
             setOpenStatus(null);
@@ -168,6 +164,7 @@ export default function PermintaanPage() {
     };
 
     const handleDelete = async (id) => {
+        if (!isAdmin) return;
         if (!window.confirm('Hapus permintaan ini?')) return;
         try {
             await permintaanService.deletePermintaan(id);
@@ -187,9 +184,12 @@ export default function PermintaanPage() {
                             </div>
                             <div>
                                 <h1 className="text-2xl font-bold text-white">Permintaan Darah</h1>
-                                <p className="text-red-200 text-xs">Kelola permintaan donor darah</p>
+                                <p className="text-red-200 text-xs">
+                                    {isAdmin ? 'Kelola semua permintaan donor darah' : 'Buat dan lihat permintaan darah'}
+                                </p>
                             </div>
                         </div>
+                        {/* Semua user boleh buat permintaan */}
                         <button onClick={() => setShowAdd(true)}
                             className="flex items-center gap-1.5 px-4 py-2 bg-white text-red-600 rounded-xl font-semibold text-sm shadow">
                             <Plus className="w-4 h-4" /> Buat Permintaan
@@ -246,9 +246,8 @@ export default function PermintaanPage() {
                     const dokter = item.nama_dokter || '-';
 
                     return (
-                        <div key={item.id} className="bg-white rounded-2xl shadow-sm relative">
-                            {/* Card header */}
-                            <div className="bg-red-600 px-4 py-3 flex justify-between items-center rounded-t-2xl">
+                        <div key={item.id} className="bg-white rounded-2xl shadow-sm overflow-hidden">
+                            <div className="bg-red-600 px-4 py-3 flex justify-between items-center">
                                 <div>
                                     <p className="text-white font-bold">{item.nama_pasien}</p>
                                     <p className="text-red-200 text-xs">{item.nama_rumah_sakit}</p>
@@ -258,7 +257,6 @@ export default function PermintaanPage() {
                                 </div>
                             </div>
 
-                            {/* Card body */}
                             <div className="px-4 py-3">
                                 <div className="grid grid-cols-3 gap-2 mb-3">
                                     <div>
@@ -275,56 +273,50 @@ export default function PermintaanPage() {
                                     </div>
                                 </div>
 
-                                {/* Pendonor info */}
                                 {item.donors && (
                                     <div className="bg-blue-50 rounded-lg px-3 py-1.5 mb-3 text-xs text-blue-700">
                                         👤 Pendonor: <span className="font-semibold">{item.donors.nama}</span> ({item.donors.golongan_darah}) — {item.donors.no_telepon}
                                     </div>
                                 )}
 
-                                {/* Status dropdown + delete */}
                                 <div className="flex items-center justify-between">
-                                    <div className="relative z-10">
-                                        <button
-                                            onClick={(e) => {
-                                                e.stopPropagation();
-                                                setOpenStatus(openStatus === item.id ? null : item.id);
-                                            }}
-                                            className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[item.status]}`}
-                                        >
-                                            {STATUS_LABEL[item.status]}
-                                            <ChevronDown className={`w-3 h-3 transition-transform ${openStatus === item.id ? 'rotate-180' : ''}`} />
-                                        </button>
-                                        
-                                        {/* Dropdown Menu - Fixed z-index & positioning */}
-                                        {openStatus === item.id && (
-                                            <div className="absolute left-0 top-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl z-50 overflow-hidden min-w-[140px]">
-                                                {STATUS_OPTIONS.map(s => (
-                                                    <button 
-                                                        key={s} 
-                                                        onClick={(e) => {
-                                                            e.stopPropagation();
-                                                            handleStatusChange(item.id, s);
-                                                        }}
-                                                        className={`block w-full text-left px-4 py-2.5 text-sm font-medium hover:bg-gray-50 transition-colors ${
-                                                            s === item.status ? 'bg-gray-100 text-red-600' : 'text-gray-700'
-                                                        }`}
-                                                    >
-                                                        {STATUS_LABEL[s]}
-                                                    </button>
-                                                ))}
-                                            </div>
+                                    <div className="relative">
+                                        {/* Admin: dropdown ubah status; Pasien: badge saja */}
+                                        {isAdmin ? (
+                                            <>
+                                                <button
+                                                    onClick={() => setOpenStatus(openStatus === item.id ? null : item.id)}
+                                                    className={`flex items-center gap-1.5 px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[item.status]}`}
+                                                >
+                                                    {STATUS_LABEL[item.status]}
+                                                    <ChevronDown className="w-3 h-3" />
+                                                </button>
+                                                {openStatus === item.id && (
+                                                    <div className="absolute left-0 top-8 bg-white border border-gray-200 rounded-xl shadow-lg z-10 overflow-hidden min-w-[120px]">
+                                                        {STATUS_OPTIONS.map(s => (
+                                                            <button key={s} onClick={() => handleStatusChange(item.id, s)}
+                                                                className={`block w-full text-left px-4 py-2 text-xs font-medium hover:bg-gray-50 ${s === item.status ? 'bg-gray-100' : ''}`}>
+                                                                {STATUS_LABEL[s]}
+                                                            </button>
+                                                        ))}
+                                                    </div>
+                                                )}
+                                            </>
+                                        ) : (
+                                            <span className={`px-3 py-1.5 rounded-full text-xs font-semibold ${STATUS_COLOR[item.status]}`}>
+                                                {STATUS_LABEL[item.status]}
+                                            </span>
                                         )}
                                     </div>
-                                    
+
                                     <div className="flex items-center gap-3 text-xs text-gray-400">
                                         <span>🩸 {item.golongan_darah}</span>
-                                        <button 
-                                            onClick={() => handleDelete(item.id)} 
-                                            className="text-gray-400 hover:text-red-500 transition-colors"
-                                        >
-                                            <Trash2 className="w-4 h-4" />
-                                        </button>
+                                        {/* Hapus hanya untuk admin */}
+                                        {isAdmin && (
+                                            <button onClick={() => handleDelete(item.id)} className="text-gray-400 hover:text-red-500 transition-colors">
+                                                <Trash2 className="w-4 h-4" />
+                                            </button>
+                                        )}
                                     </div>
                                 </div>
                             </div>

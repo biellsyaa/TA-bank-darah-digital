@@ -4,7 +4,7 @@ import { useStocks } from '../hooks/useStocks';
 import StockList from '../components/stock/StockList';
 import AddStockModal from '../components/modals/AddStockModal';
 
-export default function StocksPage({ onStockClick }) {
+export default function StocksPage({ onStockClick, isAdmin }) {
   const { stocks, loading, error, refetch } = useStocks();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -21,19 +21,15 @@ export default function StocksPage({ onStockClick }) {
       }
       lastScrollY.current = currentScrollY;
     };
-
     window.addEventListener('scroll', handleScroll, { passive: true });
-
-    return () => {
-      window.removeEventListener('scroll', handleScroll);
-    };
+    return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
   const filteredStocks = Array.isArray(stocks)
     ? stocks.filter(stock =>
-        stock.golongan_darah.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        stock.lokasi_penyimpanan.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      stock.golongan_darah.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      stock.lokasi_penyimpanan.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : [];
 
   const lowStocks = Array.isArray(filteredStocks)
@@ -48,29 +44,21 @@ export default function StocksPage({ onStockClick }) {
     ? filteredStocks.filter(stock => stock.jumlah_kantong < 10).length
     : 0;
 
-  const handleAddSuccess = () => {
-    refetch();
-  };
-
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-pink-50 pb-20">
       {/* Header */}
       <div
-        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Top Section */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
                 <Droplet className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
-                  Stok Darah
-                </h1>
+                <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">Stok Darah</h1>
                 <p className="text-red-100 text-sm flex items-center gap-2">
                   <Package className="w-4 h-4" />
                   Monitor ketersediaan stok darah
@@ -78,14 +66,17 @@ export default function StocksPage({ onStockClick }) {
               </div>
             </div>
 
-            <button
-              onClick={() => setShowAddModal(true)}
-              className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
-            >
-              <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-              <span className="hidden sm:inline">Tambah Stok</span>
-              <span className="sm:hidden">Tambah</span>
-            </button>
+            {/* Tombol Tambah hanya untuk Admin */}
+            {isAdmin && (
+              <button
+                onClick={() => setShowAddModal(true)}
+                className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
+              >
+                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                <span className="hidden sm:inline">Tambah Stok</span>
+                <span className="sm:hidden">Tambah</span>
+              </button>
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -101,7 +92,6 @@ export default function StocksPage({ onStockClick }) {
                 </div>
               </div>
             </div>
-
             <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/30 rounded-lg flex items-center justify-center">
@@ -113,7 +103,6 @@ export default function StocksPage({ onStockClick }) {
                 </div>
               </div>
             </div>
-
             <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/30 rounded-lg flex items-center justify-center">
@@ -139,7 +128,7 @@ export default function StocksPage({ onStockClick }) {
             />
           </div>
 
-          {/* Warning for Low Stocks */}
+          {/* Warning stok rendah */}
           {lowStocks.length > 0 && (
             <div className="bg-orange-500/20 backdrop-blur-md border-2 border-orange-300/50 rounded-xl p-4 flex items-start gap-3">
               <div className="w-10 h-10 bg-orange-500/30 rounded-lg flex items-center justify-center flex-shrink-0">
@@ -154,15 +143,11 @@ export default function StocksPage({ onStockClick }) {
             </div>
           )}
         </div>
-
-        {/* Shadow */}
         <div className="h-1 bg-gradient-to-b from-black/10 to-transparent"></div>
       </div>
 
-      {/* SPACER */}
       <div className="h-8"></div>
 
-      {/* Content */}
       <main className="relative z-0 max-w-7xl mx-auto px-4 py-6">
         <StockList
           stocks={filteredStocks}
@@ -173,12 +158,13 @@ export default function StocksPage({ onStockClick }) {
         />
       </main>
 
-      {/* Add Stock Modal */}
-      <AddStockModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={handleAddSuccess}
-      />
+      {isAdmin && (
+        <AddStockModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={() => refetch()}
+        />
+      )}
     </div>
   );
 }

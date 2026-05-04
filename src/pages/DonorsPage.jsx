@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Users, TrendingUp, Activity, Trash2 } from 'lucide-react';
+import { Plus, Search, Users, TrendingUp, Activity } from 'lucide-react';
 import { useDonors } from '../hooks/useDonors';
 import DonorList from '../components/donor/DonorList';
 import AddDonorModal from '../components/modals/AddDonorModal';
 
-export default function DonorsPage({ onDonorClick, onTrashClick }) {
+export default function DonorsPage({ onDonorClick, isAdmin }) {
   const { donors, loading, error, refetch } = useDonors();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -27,10 +27,12 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
 
   const filteredDonors = Array.isArray(donors)
     ? donors.filter(donor =>
-        donor.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        donor.golongan_darah.toLowerCase().includes(searchQuery.toLowerCase())
-      )
+      donor.nama.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      donor.golongan_darah.toLowerCase().includes(searchQuery.toLowerCase())
+    )
     : [];
+
+  const handleAddSuccess = () => { refetch(); };
 
   const uniqueBloodTypes = Array.isArray(donors)
     ? [...new Set(donors.map(d => d.golongan_darah))].length
@@ -38,32 +40,28 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
 
   const recentDonors = Array.isArray(donors)
     ? donors.filter(d => {
-        const donorDate = new Date(d.tanggal_donor_terakhir);
-        const thirtyDaysAgo = new Date();
-        thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
-        return donorDate >= thirtyDaysAgo;
-      }).length
+      const donorDate = new Date(d.tanggal_donor_terakhir);
+      const thirtyDaysAgo = new Date();
+      thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+      return donorDate >= thirtyDaysAgo;
+    }).length
     : 0;
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-pink-50 pb-20">
       {/* Header */}
       <div
-        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${
-          isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-        }`}
+        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
+          }`}
       >
         <div className="max-w-7xl mx-auto px-4 py-6">
-          {/* Top Section */}
           <div className="flex items-center justify-between mb-6">
             <div className="flex items-center gap-4">
               <div className="w-14 h-14 bg-white/20 backdrop-blur-sm rounded-2xl flex items-center justify-center shadow-lg">
                 <Users className="w-8 h-8 text-white" />
               </div>
               <div>
-                <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">
-                  Daftar Pendonor
-                </h1>
+                <h1 className="text-3xl font-bold text-white mb-1 drop-shadow-lg">Daftar Pendonor</h1>
                 <p className="text-red-100 text-sm flex items-center gap-2">
                   <Activity className="w-4 h-4" />
                   Kelola data pendonor darah Anda
@@ -71,18 +69,8 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
               </div>
             </div>
 
-            <div className="flex items-center gap-2">
-              {/* Trash Button */}
-              <button
-                onClick={onTrashClick}
-                className="flex items-center gap-2 px-4 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all duration-300 shadow-lg"
-                title="Sampah"
-              >
-                <Trash2 className="w-5 h-5" />
-                <span className="hidden sm:inline text-sm font-medium">Sampah</span>
-              </button>
-
-              {/* Add Button */}
+            {/* Tombol Tambah hanya untuk Admin */}
+            {isAdmin && (
               <button
                 onClick={() => setShowAddModal(true)}
                 className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
@@ -91,7 +79,7 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
                 <span className="hidden sm:inline">Tambah Pendonor</span>
                 <span className="sm:hidden">Tambah</span>
               </button>
-            </div>
+            )}
           </div>
 
           {/* Stats Cards */}
@@ -107,7 +95,6 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
                 </div>
               </div>
             </div>
-
             <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/30 rounded-lg flex items-center justify-center">
@@ -119,7 +106,6 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
                 </div>
               </div>
             </div>
-
             <div className="bg-white/20 backdrop-blur-md rounded-xl p-4 border border-white/30">
               <div className="flex items-center gap-3">
                 <div className="w-12 h-12 bg-white/30 rounded-lg flex items-center justify-center">
@@ -160,11 +146,13 @@ export default function DonorsPage({ onDonorClick, onTrashClick }) {
         />
       </main>
 
-      <AddDonorModal
-        isOpen={showAddModal}
-        onClose={() => setShowAddModal(false)}
-        onSuccess={refetch}
-      />
+      {isAdmin && (
+        <AddDonorModal
+          isOpen={showAddModal}
+          onClose={() => setShowAddModal(false)}
+          onSuccess={handleAddSuccess}
+        />
+      )}
     </div>
   );
 }
