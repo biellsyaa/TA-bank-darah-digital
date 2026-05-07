@@ -1,3 +1,4 @@
+// Amanda Lalita Tri Gunawan
 import React, { useState, useEffect } from 'react';
 import { User, Mail, LogOut, Phone, MapPin, Calendar, Droplet, Edit2, X, Check, Shield, UserCheck } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth';
