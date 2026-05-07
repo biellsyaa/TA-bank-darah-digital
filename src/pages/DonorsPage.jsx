@@ -1,10 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
-import { Plus, Search, Users, TrendingUp, Activity } from 'lucide-react';
+import { Plus, Search, Users, TrendingUp, Activity, Trash2 } from 'lucide-react';
 import { useDonors } from '../hooks/useDonors';
 import DonorList from '../components/donor/DonorList';
 import AddDonorModal from '../components/modals/AddDonorModal';
 
-export default function DonorsPage({ onDonorClick, isAdmin }) {
+export default function DonorsPage({ onDonorClick, onTrashClick, isAdmin }) {
   const { donors, loading, error, refetch } = useDonors();
   const [showAddModal, setShowAddModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -51,8 +51,7 @@ export default function DonorsPage({ onDonorClick, isAdmin }) {
     <div className="min-h-screen bg-gradient-to-br from-red-50 via-white to-pink-50 pb-20">
       {/* Header */}
       <div
-        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'
-          }`}
+        className={`bg-gradient-to-r from-red-600 to-red-700 shadow-2xl sticky top-0 z-50 transition-transform duration-300 ${isHeaderVisible ? 'translate-y-0' : '-translate-y-full'}`}
       >
         <div className="max-w-7xl mx-auto px-4 py-6">
           <div className="flex items-center justify-between mb-6">
@@ -69,16 +68,26 @@ export default function DonorsPage({ onDonorClick, isAdmin }) {
               </div>
             </div>
 
-            {/* Tombol Tambah hanya untuk Admin */}
+            {/* Tombol hanya untuk Admin */}
             {isAdmin && (
-              <button
-                onClick={() => setShowAddModal(true)}
-                className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
-              >
-                <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
-                <span className="hidden sm:inline">Tambah Pendonor</span>
-                <span className="sm:hidden">Tambah</span>
-              </button>
+              <div className="flex items-center gap-2">
+                <button
+                  onClick={onTrashClick}
+                  className="flex items-center gap-2 px-4 py-3 bg-white/20 text-white rounded-xl hover:bg-white/30 transition-all duration-300 shadow-lg"
+                  title="Sampah"
+                >
+                  <Trash2 className="w-5 h-5" />
+                  <span className="hidden sm:inline text-sm font-medium">Sampah</span>
+                </button>
+                <button
+                  onClick={() => setShowAddModal(true)}
+                  className="group flex items-center gap-2 px-6 py-3 bg-white text-red-600 rounded-xl hover:bg-red-50 transition-all duration-300 shadow-lg hover:shadow-xl hover:scale-105 font-semibold"
+                >
+                  <Plus className="w-5 h-5 group-hover:rotate-90 transition-transform duration-300" />
+                  <span className="hidden sm:inline">Tambah Pendonor</span>
+                  <span className="sm:hidden">Tambah</span>
+                </button>
+              </div>
             )}
           </div>
 
